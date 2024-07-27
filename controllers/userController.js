@@ -104,13 +104,16 @@ const autoRegisterUser = async (req, res) => {
 }
 
 const updateUser = async (req, res) => {
+    // Extraction des paramètres et des données
     const { userId } = req.params;
     const { email, password, newPassword, confirmNewPassword, name, phone } = req.body;
     const currentUser = req.user;
 
     try {
+        // Recherche de l'utilisateur à modifier dans la base de données
         const userToModify = await User.findById(userId)
 
+        // Vérification si l'utilisateur existe
         if (!userToModify) {
             return res.status(404).json({
                 success: false,
@@ -119,6 +122,7 @@ const updateUser = async (req, res) => {
         }
 
         // Verification des autorisations
+        // Seul un administrateur ou l'utilisateur lui-même peut modifier ses informations
         if (currentUser.role !== 'admin' && currentUser._id.toString() !== userId) {
             return res.status(403).json({
                 success: false,
@@ -126,7 +130,9 @@ const updateUser = async (req, res) => {
             });
         }
 
+        // Update de l'email
         if (email) {
+            // Vérification du mot de passe actuel par sécurité
             const isPasswordValid = await passwordCompare(password, userToModify.password)
             if (!isPasswordValid) {
                 return res.status(401).json({
@@ -137,6 +143,7 @@ const updateUser = async (req, res) => {
             userToModify.email = email;
         }
 
+        // Update du mot de passe
         if (newPassword && confirmNewPassword) {
             if (newPassword !== confirmNewPassword) {
                 return res.status(400).json({
@@ -145,6 +152,7 @@ const updateUser = async (req, res) => {
                 });
             }
 
+            // Vérification du mot de passe actuel
             const isPasswordValid = await passwordCompare(password, userToModify.password);
             if (!isPasswordValid) {
                 return res.status(401).json({
@@ -153,12 +161,15 @@ const updateUser = async (req, res) => {
                 });
             }
 
+            // Hachage du nouveau mot de passe et update
             const hashedPass = await encrypt(newPassword)
             userToModify.password = hashedPass
         }
 
+        // Update du nom
         if (name) userToModify.name = name
 
+        // Update du numero de téléphone
         if (phone) userToModify.phone = phone
 
         await userToModify.save();
