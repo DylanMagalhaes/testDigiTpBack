@@ -9,7 +9,9 @@ require('dotenv').config();
 
 // jsonwebtoken generator, with a userId to identify the user
 function generateToken(userId) {
-    return jwt.sign({ "sub": userId }, process.env.TOKEN_SECRET, {  });
+    const token = jwt.sign({ "sub": userId }, process.env.TOKEN_SECRET, {});
+    console.log(token);
+    return token
 }
 
 function verifyToken(req) {
@@ -43,15 +45,15 @@ async function encrypt(string) {
 
 async function passwordCompare(inputString, hashedString) {
     return new Promise((resolve, reject) => {
-        bcrypt.compare(inputString, hashedString, function(err, isValidated) {
-            if(err) {
+        bcrypt.compare(inputString, hashedString, function (err, isValidated) {
+            if (err) {
                 reject(err)
                 return
             }
-            if(isValidated) {
+            if (isValidated) {
                 resolve(true)
             } else {
-                reject({message:"Passwords don't match"})
+                reject({ message: "Passwords don't match" })
             }
         })
     })

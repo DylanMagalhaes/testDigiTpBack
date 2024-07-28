@@ -104,16 +104,17 @@ const autoRegisterUser = async (req, res) => {
 }
 
 const updateUser = async (req, res) => {
-    // Extraction des paramètres et des données
     const { userId } = req.params;
     const { email, password, newPassword, confirmNewPassword, name, phone } = req.body;
     const currentUser = req.user;
 
-    try {
-        // Recherche de l'utilisateur à modifier dans la base de données
-        const userToModify = await User.findById(userId)
+    console.log('Received userId:', userId);
+    console.log('Request Body:', req.body);
 
-        // Vérification si l'utilisateur existe
+    try {
+        const userToModify = await User.findById(userId);
+        console.log('User to modify:', userToModify);
+
         if (!userToModify) {
             return res.status(404).json({
                 success: false,
@@ -121,23 +122,30 @@ const updateUser = async (req, res) => {
             });
         }
 
-        // Verification des autorisations
-        // Seul un administrateur ou l'utilisateur lui-même peut modifier ses informations
+        console.log("userId = " + userToModify._id + " " + "currentUser = " + currentUser._id);
+
+        // Vérification des autorisations
         if (currentUser.role !== 'admin' && currentUser._id.toString() !== userId) {
             return res.status(403).json({
                 success: false,
-                message: "Non autorisé a modifier cet utilisateur"
+                message: "Non autorisé à modifier cet utilisateur"
             });
         }
 
         // Update de l'email
         if (email) {
-            // Vérification du mot de passe actuel par sécurité
-            const isPasswordValid = await passwordCompare(password, userToModify.password)
+            // Vérification si le mot de passe est fourni
+            if (!password) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Mot de passe requis pour changer l'email"
+                });
+            }
+            const isPasswordValid = await passwordCompare(password, userToModify.password);
             if (!isPasswordValid) {
                 return res.status(401).json({
                     success: false,
-                    message: "mot de passe incorrect"
+                    message: "Mot de passe incorrect"
                 });
             }
             userToModify.email = email;
@@ -148,47 +156,50 @@ const updateUser = async (req, res) => {
             if (newPassword !== confirmNewPassword) {
                 return res.status(400).json({
                     success: false,
-                    message: "Les nouveaux mot de passe ne correspondent pas"
+                    message: "Les nouveaux mots de passe ne correspondent pas"
                 });
             }
-
-            // Vérification du mot de passe actuel
             const isPasswordValid = await passwordCompare(password, userToModify.password);
             if (!isPasswordValid) {
                 return res.status(401).json({
                     success: false,
-                    message: "mot de passe incorrect"
+                    message: "Mot de passe incorrect"
                 });
             }
-
-            // Hachage du nouveau mot de passe et update
-            const hashedPass = await encrypt(newPassword)
-            userToModify.password = hashedPass
+            const hashedPass = await encrypt(newPassword);
+            userToModify.password = hashedPass;
         }
 
         // Update du nom
-        if (name) userToModify.name = name
+        if (name) userToModify.name = name;
 
-        // Update du numero de téléphone
-        if (phone) userToModify.phone = phone
+        // Update du numéro de téléphone
+        if (phone) userToModify.phone = phone;
 
+        // Sauvegarde des modifications dans la DB
         await userToModify.save();
+
+        // Suppression du mot de passe avant de retourner l'utilisateur
+        const updatedUser = userToModify.toObject();
+        delete updatedUser.password;
 
         return res.status(200).json({
             success: true,
             message: "Utilisateur mis à jour avec succès",
-            user: userToModify
+            data: updatedUser // Retourne les données mises à jour sans le mot de passe
         });
 
     } catch (error) {
+        console.error('Update User Error:', error);
         return res.status(500).json({
             success: false,
             message: "Erreur serveur",
             error: error.message
-        })
-
+        });
     }
-}
+};
+
+
 
 module.exports = {
     autoRegisterUser,
