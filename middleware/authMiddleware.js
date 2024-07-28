@@ -1,14 +1,12 @@
-// Importation des modules nécessaires
-const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const { verifyToken } = require('../utils/functions');
 
-// Middleware d'authentification
+// Authentification Middleware
 const authMiddleware = async (req, res, next) => {
 
   const token = req.header('Authorization');
 
-  // Vérification si le token n'est pas fourni
+  // Check if the token is not provided
   if (!token) {
     return res.status(401).json({
       success: false,
@@ -16,10 +14,10 @@ const authMiddleware = async (req, res, next) => {
     });
   }
 
-  // Vérification du token et récupération de l'ID de l'utilisateur
+  // Verify the token and retrieve the user ID
   const userId = verifyToken(req);
 
-  // Si le token est invalide, renvoie une erreur
+  // If the token is invalid, return an error
   if (!userId) {
     return res.status(400).json({
       success: false,
@@ -31,7 +29,7 @@ const authMiddleware = async (req, res, next) => {
     // Recherche de l'utilisateur dans la base de données par son ID
     req.user = await User.findById(userId);
 
-    // Si l'utilisateur n'est pas trouvé, renvoie une erreur
+    // Search for the user in the database by their ID
     if (!req.user) {
       return res.status(404).json({
         success: false,

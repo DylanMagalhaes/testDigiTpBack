@@ -103,6 +103,7 @@ const autoRegisterUser = async (req, res) => {
     }
 }
 
+// Function to handle updating user information
 const updateUser = async (req, res) => {
     const { userId } = req.params;
     const { email, password, newPassword, confirmNewPassword, name, phone } = req.body;
@@ -124,7 +125,7 @@ const updateUser = async (req, res) => {
 
         console.log("userId = " + userToModify._id + " " + "currentUser = " + currentUser._id);
 
-        // Vérification des autorisations
+        // Check permissions
         if (currentUser.role !== 'admin' && currentUser._id.toString() !== userId) {
             return res.status(403).json({
                 success: false,
@@ -132,9 +133,9 @@ const updateUser = async (req, res) => {
             });
         }
 
-        // Update de l'email
+        // Update email
         if (email) {
-            // Vérification si le mot de passe est fourni
+            // Check if password is provided
             if (!password) {
                 return res.status(400).json({
                     success: false,
@@ -151,7 +152,7 @@ const updateUser = async (req, res) => {
             userToModify.email = email;
         }
 
-        // Update du mot de passe
+        // Update password
         if (newPassword && confirmNewPassword) {
             if (newPassword !== confirmNewPassword) {
                 return res.status(400).json({
@@ -170,23 +171,23 @@ const updateUser = async (req, res) => {
             userToModify.password = hashedPass;
         }
 
-        // Update du nom
+        // Update name
         if (name) userToModify.name = name;
 
-        // Update du numéro de téléphone
+        // Update phone number
         if (phone) userToModify.phone = phone;
 
-        // Sauvegarde des modifications dans la DB
+        // Save changes to DB
         await userToModify.save();
 
-        // Suppression du mot de passe avant de retourner l'utilisateur
+        // Remove password before returning user
         const updatedUser = userToModify.toObject();
         delete updatedUser.password;
 
         return res.status(200).json({
             success: true,
             message: "Utilisateur mis à jour avec succès",
-            data: updatedUser // Retourne les données mises à jour sans le mot de passe
+            data: updatedUser // Return updated data without password
         });
 
     } catch (error) {
